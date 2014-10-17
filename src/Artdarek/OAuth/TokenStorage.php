@@ -1,139 +1,149 @@
 <?php
 /**
- * @author     Dariusz Prząda <artdarek@gmail.com>
+ * @author     Samuel Vasko <samvasko@gmail.com>
  * @copyright  Copyright (c) 2013
  * @license    http://www.opensource.org/licenses/mit-license.html MIT License
  */
 
 namespace Artdarek\OAuth;
 
-use Illuminate\Support\ServiceProvider;
+use OAuth\Common\Token\TokenInterface;
+use OAuth\Common\Storage\TokenStorageInterface;
+use OAuth\Common\Storage\Exception\TokenNotFoundException;
+use Illuminate\Session\SessionManager as Session;
 
-use \Config;
-use \URL;
 
-use \OAuth\ServiceFactory;
-use \OAuth\Common\Consumer\Credentials;
-use \OAuth\Common\Http\Uri\Uri;
-
-class OAuth
+/**
+ * Implementation of token storage using Laravel session
+ * that can be changed in config/session.php
+ */
+class TokenStorage implements TokenStorageInterface
 {
-    /**
-     * @var ServiceFactory
-     */
-    private $_serviceFactory;
 
     /**
-     * @var TokenStorage
+     * Holds reference to Laravel session
+     * @var Session
      */
-    private $_storage;
+    protected $session;
 
     /**
-     * Client ID from config
+     * Base name for all tokens
      * @var string
      */
-    private $_client_id;
+    protected $sessionVariable;
 
-    /**
-     * Client secret from config
-     * @var string
-     */
-    private $_client_secret;
-
-    /**
-     * Scope from config
-     * @var array
-     */
-    private $_scope = array();
-
-    /**
-     * Uri from config
-     * @var array
-     */
-    private $_uri;
-
-    /**
-     * Constructor
-     *
-     * @param ServiceFactory $serviceFactory
-     */
-    public function __construct(ServiceFactory $serviceFactory, TokenStorage $storage)
+    function __construct(Session $session, $sessionVariable = 'OAuth')
     {
-        $this->_serviceFactory = $serviceFactory;
-        $this->_storage = $storage;
+        $this->session = $session;
+        $this->sessionVariable = $sessionVariable;
     }
 
     /**
-     * Detect config and set data from it
-     *
-     * @param string $service
+     * Creates name where token is stored
+     * @param  string $service Name of the service
+     * @return string          Dot delimited key
      */
-    public function loadConfig($service)
+    protected function storageName($service)
     {
-        $this->_client_id = $this->getConfig('consumers.'.$service.'.client_id');
-        $this->_client_secret = $this->getConfig('consumers.'.$service.'.client_secret');
-        $this->_scope = $this->getConfig('consumers.'.$service.'.scope');
-        $this->_uri = new Uri($this->getConfig('consumers.'.$service.'.uri'));
+        return $this->sessionVariable.'.'.$service;
     }
 
     /**
-     * Get config value for key
-     * Looks at 3 different locations where they can be placed
-     * @param  string $key   OAuth config value
-     * @return string        Config value
+     * {@inheritDoc}
      */
-    protected function getConfig($key)
+    public function retrieveAccessToken($service)
     {
-        if ($value = Config::get('oauth.'.$key))
-            return $value;
-        /**
-         * @deprecated This value should get removed in future releases
-         * As it is too long and contains unecessary information
-         */
-        if ($value = Config::get('oauth-4-laravel.'.$key))
-            return $value;
+        $name = $this->storageName($service);
+        if ($token = $this->session->get($name))
+            return unserialize($token);
 
-        if ($value = Config::get('oauth-4-laravel::'.$key))
-            return $value;
-
+        throw new TokenNotFoundException('Token not found in session, are you sure you stored it?');
     }
 
     /**
-     * Set the http client object
-     *
-     * @param string $httpClientName
-     * @return void
+     * {@inheritDoc}
      */
-    public function setHttpClient($httpClientName)
+    public function storeAccessToken($service, TokenInterface $token)
     {
-        $httpClientClass = '\OAuth\Common\Http\Client\$httpClientName';
-        $this->_serviceFactory->setHttpClient(new $httpClientClass());
+        $name = $this->storageName($service);
+        $this->session->put($name, serialize($token));
+
+        return $this;
     }
 
     /**
-     * @param  string $service
-     * @param  string $url
-     * @param  array  $scope
-     * @return \OAuth\Common\Service\AbstractService
+     * {@inheritDoc}
      */
-    public function consumer($service, $url = null, $scope = null, $uri = null)
+    public function hasAccessToken($service)
     {
-        // get config
-        $this->loadConfig($service);
-
-        // create credentials object
-        $credentials = new Credentials(
-            $this->_client_id,
-            $this->_client_secret,
-            $url ?: URL::current()
-        );
-
-        // check if scopes were provided
-        if (is_null($scope))
-            $scope = $this->_scope ? $this->_scope : array();
-
-        // return the service consumer object
-        return $this->_serviceFactory->createService($service, $credentials, $this->_storage, $scope, $this->_uri);
-
+        $name = $this->storageName($service);
+        return $this->session->has($name);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function clearToken($service)
+    {
+        $name = $this->storageName($service);
+        $this->session->remove($service);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function clearAllTokens()
+    {
+        $this->session->remove($this->sessionVariable);
+
+        return $this;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */    
+    public function storeAuthorizationState($service, $state)
+    {
+
+        return $this;    
+    }
+    
+    /**
+     * {@inheritDoc}
+     */    
+    public function hasAuthorizationState($service)
+    {
+
+        return $this;    
+    }
+
+    /**
+     * {@inheritDoc}
+     */    
+    public function retrieveAuthorizationState($service)
+    {
+
+        return $this;    
+    }
+    
+    /**
+     * {@inheritDoc}
+     */    
+    public function clearAuthorizationState($service)
+    {
+
+        return $this;    
+    }
+    
+    /**
+     * {@inheritDoc}
+     */    
+    public function clearAllAuthorizationStates()
+    {
+
+        return $this;    
+    }    
 }
+
