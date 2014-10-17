@@ -1,14 +1,19 @@
 {
-    "name": "artdarek/oauth-4-laravel",
+    "name": "develme/oauth-4-laravel",
     "type": "library",
-    "description": "OAuth Service Provider for Laravel 4",
-    "keywords": ["OAuth", "Lusitanian", "laravel", "php"],
-    "homepage": "https://github.com/artdarek/oauth-4-laravel",
+    "description": "OAuth Service Provider for Laravel 4 with Pearson's PowerSchool support",
+    "keywords": ["OAuth", "Lusitanian", "laravel", "php", "PowerSchool"],
+    "homepage": "https://github.com/develme/oauth-4-laravel",
     "license": "MIT",
     "authors": [
         {
             "name": "Artdarek",
             "email": "artdarek@gmail.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Verron Knowles",
+            "email": "Verron.Knowles@gmail.com",
             "role": "Developer"
         }
     ],
