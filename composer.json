@@ -17,13 +17,13 @@
             "role": "Developer"
         }
     ],
-	"repositories" : [
-		{
-			"url": "https://github.com/develme/PHPoAuthLib.git",
-			"type": "git"
-		}
-	],
-	"require": {
+    "repositories" : [
+        {
+	    "url": "https://github.com/develme/PHPoAuthLib.git",
+	    "type": "git"
+	}
+    ],
+    "require": {
         "php": ">=5.3",     
         "develme/oauth": "~0.3"
     },
