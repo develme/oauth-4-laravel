@@ -27,7 +27,9 @@ class OAuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->package('artdarek/oauth-4-laravel');
+        $this->publishes([
+            __DIR__.'/../config/config.php' => config_path('oauth.php')
+        ]);
     }
 
     /**
