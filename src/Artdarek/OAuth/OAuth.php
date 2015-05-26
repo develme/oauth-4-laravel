@@ -116,15 +116,15 @@ class OAuth
      * @param  array  $scope
      * @return \OAuth\Common\Service\AbstractService
      */
-    public function consumer($service, $url = null, $scope = null, $uri = null)
+    public function consumer($service, $url = null, $scope = null, $uri = null, $client_id = null, $client_secret = null)
     {
         // get config
         $this->loadConfig($service);
 
         // create credentials object
         $credentials = new Credentials(
-            $this->_client_id,
-            $this->_client_secret,
+            $client_id ?: $this->_client_id,
+            $client_secret ?: $this->_client_secret,
             $url ?: URL::current()
         );
 
@@ -132,11 +132,13 @@ class OAuth
         if (is_null($scope))
             $scope = $this->_scope ? $this->_scope : array();
 
-        // check if scopes were provided
+        // check if uri were provided
         if (is_null($uri))
             $uri = $this->_uri ? $this->_uri : array();
+        
+        $uri = new Uri($uri);
 
-
+        // dd($uri);
         // return the service consumer object
         return $this->_serviceFactory->createService($service, $credentials, $this->_storage, $scope, $uri);
 
